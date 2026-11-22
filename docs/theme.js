@@ -52,3 +52,21 @@ buttons.forEach(button => {
 
 system.addEventListener("change", applyTheme);
 applyTheme();
+
+// Color preferences are local and independent of light/dark appearance.
+const colorSelect = document.getElementById('interface-color');
+const colorKey = 'minimal-pomo-color';
+const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
+let color = 'green';
+try { color = localStorage.getItem(colorKey) || 'green'; } catch {}
+if (!colors.includes(color)) color = 'green';
+function applyColor() {
+  document.documentElement.dataset.color = color;
+  if (colorSelect) colorSelect.value = color;
+}
+if (colorSelect) colorSelect.addEventListener('change', () => {
+  color = colors.includes(colorSelect.value) ? colorSelect.value : 'green';
+  try { localStorage.setItem(colorKey, color); } catch {}
+  applyColor();
+});
+applyColor();
