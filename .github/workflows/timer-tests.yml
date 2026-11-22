@@ -1,0 +1,26 @@
+name: Timer and audio regression tests
+on:
+  push:
+    paths:
+      - 'docs/**'
+      - 'public/**'
+      - 'test/**'
+      - '.github/workflows/timer-tests.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'public/**'
+      - 'test/**'
+      - '.github/workflows/timer-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test
