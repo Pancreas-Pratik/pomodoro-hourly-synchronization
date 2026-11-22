@@ -85,6 +85,7 @@ export class SharedTimer {
     ++this.refreshRequested;
     if (this.refreshing) return this.refreshing;
 
+    this.onStatus('reconnecting');
     this.refreshing = (async () => {
       let completed = 0;
 
@@ -92,6 +93,7 @@ export class SharedTimer {
         completed = this.refreshRequested;
         this.apply(await this.rpc('pomo_read', {}));
       }
+      if (this.live && !this.stopped) this.onStatus('online');
     })();
 
     try {
@@ -151,7 +153,7 @@ export class SharedTimer {
 
         this.live = true;
         this.retryMs = 1000;
-        this.onStatus('online');
+        // Stay muted until fresh shared state arrives, not just a socket ack.
         this.refresh().catch(e => this.onStatus('error', e));
 
         clearInterval(this.heartbeat);

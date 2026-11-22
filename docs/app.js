@@ -1,5 +1,5 @@
 import {initialState, current, change} from './timer.js?v=10020';
-import {SharedTimer} from './shared.js';
+import {SharedTimer} from './shared.js?v=audio32';
 import {
   DISCORD_CLIENT_ID,
   SUPABASE_URL,
@@ -43,13 +43,17 @@ function render() {
   const time = now();
   const view = current(state, time);
 
+  // Audio follows ONLY this rendered timer. Discord must have confirmed shared
+  // state; its local fallback and unconfirmed edits must never sound.
   // Send the live timer state to the sound system,
   // even when Discord is in the background.
   window.dispatchEvent(new CustomEvent('pomo-live-timer', {
     detail: {
       ...view,
-      safeToNotify: !connecting &&
-        (!sharedReady || sharedConnection === 'online')
+      safeToNotify: !pending && !connecting &&
+        (inDiscord
+          ? sharedReady && sharedConnection === 'online'
+          : !sharedReady || sharedConnection === 'online')
     }
   }));
 

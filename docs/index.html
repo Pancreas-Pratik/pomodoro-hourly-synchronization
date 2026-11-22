@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="dark light"><meta name="description" content="A minimal Pomodoro timer aligned to the hour.">
-  <title>avocado-synchronization</title><link rel="stylesheet" href="./style.css?v=swatches2"><script type="module" src="./app.js?v=10020"></script>
+  <title>avocado-synchronization</title><link rel="stylesheet" href="./style.css?v=swatches2"><script type="module" src="./app.js?v=audio32"></script>
 <script defer src="./theme.js?v=swatches2"></script>
-  <script defer src="./sounds.js?v=30"></script>
+  <script defer src="./sounds.js?v=audio32"></script>
   <script defer src="./settings-ui.js?v=10020"></script>
 </head>
 <body>
@@ -54,6 +54,8 @@
 
 <div class="sound-settings">
   <p class="sound-heading">Break notifications</p>
+  <button type="button" id="enable-sounds" aria-pressed="false">Enable timer sounds</button>
+  <p class="hint">Sounds apply only to this timer. Starting or syncing also enables them; color changes and Test do not.</p>
 
   <div class="sound-row">
     <label for="beforeBreakSound">Before break</label>

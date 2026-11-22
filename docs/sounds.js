@@ -24,7 +24,7 @@
     ['beep', 'Classic beep']
   ];
 
-  // Each instrument is synthesized; no sound files are required.
+  // Short instrument alerts are synthesized; the 15-second option uses an MP3.
   const presets = {
     chime:    {wave:'sine',     notes:[523,659,784], duration:0.65, attack:0.035, volume:0.10, parts:[[1,1],[2,0.12]]},
     bell:     {wave:'sine',     notes:[587,698,880], duration:1.05, attack:0.012, volume:0.09, parts:[[1,1],[2.01,0.20],[3.9,0.05]]},
@@ -42,7 +42,6 @@
 
   // Expand both menus and remember existing selections.
   for (const select of [beforeBreak, beforeFocus]) {
-    const previous = select.value;
     let saved;
     try { saved = localStorage.getItem('pomo-15s-' + select.id); } catch {}
     select.replaceChildren(...choices.map(([value, label]) => new Option(label, value)));
@@ -54,6 +53,19 @@
   }
 
   
+
+  // Permission to play automatic alerts is per open page, never restored from
+  // storage. Merely browsing Settings/colors must not arm a second timer.
+  let alertsEnabled = false;
+  const alertsButton = document.getElementById('enable-sounds');
+  function setAlertsEnabled(enabled) {
+    alertsEnabled = enabled;
+    if (alertsButton) {
+      alertsButton.textContent = enabled ? 'Mute timer sounds' : 'Enable timer sounds';
+      alertsButton.setAttribute('aria-pressed', String(enabled));
+    }
+    if (!enabled) stopAutomatic();
+  }
 
   let audio;
   let masterGain;
@@ -120,7 +132,7 @@
   // Automatic alerts and Test playback have separate audio sources.
   const clipSources = {automatic: null, test: null};
   const clipGenerations = {automatic: 0, test: 0};
-  const automaticNotes = new Set();
+  const notes = {automatic: new Set(), test: new Set()};
 
   function stopClip(kind = 'automatic') {
     clipGenerations[kind]++;
@@ -132,13 +144,19 @@
     }
   }
 
-  function stopAutomatic() {
-    stopClip('automatic');
-    for (const oscillator of automaticNotes) {
+  function stopPlayback(kind) {
+    stopClip(kind);
+    for (const oscillator of notes[kind]) {
       try { oscillator.stop(); } catch {}
       try { oscillator.disconnect(); } catch {}
     }
-    automaticNotes.clear();
+    notes[kind].clear();
+  }
+
+  function stopAutomatic() { stopPlayback('automatic'); }
+  function stopAll() {
+    stopAutomatic();
+    stopPlayback('test');
   }
 
   function loadClip(ctx) {
@@ -172,7 +190,8 @@
     const requestedAt = performance.now();
     try {
       const buffer = await loadClip(ctx);
-      if (generation !== clipGenerations[kind] || audio !== ctx) return;
+      if (generation !== clipGenerations[kind] || audio !== ctx ||
+          ctx.state !== 'running') return;
 
       // Align late playback with the *current* countdown.
       const remaining = seconds - (performance.now() - requestedAt) / 1000;
@@ -192,20 +211,6 @@
     }
   }
 
-  // Stop old sounds when timer settings change
-  for (const select of [beforeBreak, beforeFocus]) {
-    select.addEventListener('change', stopAutomatic);
-  }
-
-  for (const id of ['toggle', 'reset', 'sync']) {
-    document.getElementById(id)?.addEventListener('click', stopAutomatic);
-  }
-
-  document.getElementById('durations')
-    ?.addEventListener('submit', stopAutomatic);
-
-
-  
   function unlockAudio() {
     const AudioContextClass =
       window.AudioContext || window.webkitAudioContext;
@@ -255,8 +260,43 @@
 
 
 
-  document.addEventListener('pointerdown', unlockAudio, {capture:true});
-  document.addEventListener('keydown', unlockAudio, {capture:true});
+  function enableAlerts() {
+    setAlertsEnabled(true);
+    unlockAudio();
+  }
+
+  // Capture before app.js changes state and sends its immediate live update.
+  // Native button clicks cover pointer, keyboard and assistive technology.
+  for (const id of ['toggle', 'sync', 'sync100']) {
+    document.getElementById(id)?.addEventListener('click', () => {
+      stopAll();
+      enableAlerts();
+    }, {capture: true});
+  }
+  document.getElementById('reset')?.addEventListener('click', stopAll,
+    {capture: true});
+  document.getElementById('durations')?.addEventListener('submit', () => {
+    stopAll();
+    enableAlerts();
+  }, {capture: true});
+  for (const select of [beforeBreak, beforeFocus]) {
+    select.addEventListener('change', () => {
+      stopAll();
+      enableAlerts();
+    });
+  }
+  alertsButton?.addEventListener('click', () => {
+    if (alertsEnabled) {
+      setAlertsEnabled(false);
+      stopAll();
+    } else {
+      enableAlerts();
+    }
+  });
+  window.addEventListener('pagehide', () => {
+    setAlertsEnabled(false);
+    stopAll();
+  });
 
   function playNote(name, step, when, kind = 'automatic') {
     const p = presets[name];
@@ -280,12 +320,10 @@
       gain.gain.exponentialRampToValueAtTime(0.0001, when + p.duration);
       oscillator.connect(gain);
       gain.connect(masterGain);
-      if (kind === 'automatic') {
-        automaticNotes.add(oscillator);
-        oscillator.addEventListener('ended', () => {
-          automaticNotes.delete(oscillator);
-        }, {once: true});
-      }
+      notes[kind].add(oscillator);
+      oscillator.addEventListener('ended', () => {
+        notes[kind].delete(oscillator);
+      }, {once: true});
       oscillator.start(when);
       oscillator.stop(when + p.duration + 0.02);
     }
@@ -294,6 +332,8 @@
   // Test plays a quick preview of all three countdown notes.
   document.querySelectorAll('[data-test-sound]').forEach(button => {
     button.addEventListener('click', async () => {
+      stopPlayback('test');
+      const generation = clipGenerations.test;
       const selected = document.getElementById(button.dataset.testSound);
       if (!selected || selected.value === 'off') return;
       const ctx = unlockAudio();
@@ -301,7 +341,7 @@
       if (ctx.state === 'suspended') {
         try { await ctx.resume(); } catch { return; }
       }
-      if (ctx.state !== 'running') return;
+      if (ctx.state !== 'running' || generation !== clipGenerations.test) return;
       if (selected.value === 'countdown15') {
         playClip(15, 'test');
         return;
@@ -316,15 +356,20 @@
   // Live state notifications from app.js. NO advance scheduling.
   let lastCycle = null;
   let lastEligible = false;
-  const played = new Set();
+  // Keep a small history across pauses/reconnects and optimistic rollbacks.
+  // A version/connection update is not a new phase deadline.
+  const playedCycles = new Map();
 
   window.addEventListener('pomo-live-timer', event => {
     const timer = event.detail;
     if (!timer) return;
 
-    const eligible = Boolean(timer.running && timer.safeToNotify);
+    const eligible = Boolean(alertsEnabled && timer.running && timer.safeToNotify &&
+      Number.isFinite(timer.endsAt) && Number.isFinite(timer.remaining) &&
+      ['hourly', 'twohour', 'custom'].includes(timer.mode) &&
+      ['focus', 'break'].includes(timer.phase));
     const cycle = [
-      timer.version, timer.mode, timer.phase,
+      timer.mode, timer.phase,
       timer.endsAt, timer.focus, timer.rest
     ].join('|');
 
@@ -332,13 +377,18 @@
     // or disconnection immediately cancels AUTOMATIC audio only.
     if (cycle !== lastCycle || eligible !== lastEligible) {
       stopAutomatic();
-      played.clear();
     }
     lastCycle = cycle;
     lastEligible = eligible;
     if (!eligible) return;
 
-    const ms = Number(timer.remaining);
+    let played = playedCycles.get(cycle);
+    if (!played) {
+      played = new Set();
+      playedCycles.set(cycle, played);
+      if (playedCycles.size > 8) playedCycles.delete(playedCycles.keys().next().value);
+    }
+    const ms = timer.remaining;
     if (!Number.isFinite(ms) || ms <= 0) return;
 
     const sound = timer.phase === 'focus'
