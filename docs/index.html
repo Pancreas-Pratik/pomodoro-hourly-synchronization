@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="dark light"><meta name="description" content="A minimal Pomodoro timer aligned to the hour.">
-  <title>avocado-synchronization</title><link rel="stylesheet" href="./style.css?v=rainbow1"><script type="module" src="./app.js?v=10020"></script>
-<script defer src="./theme.js?v=rainbow1"></script>
+  <title>avocado-synchronization</title><link rel="stylesheet" href="./style.css?v=swatches2"><script type="module" src="./app.js?v=10020"></script>
+<script defer src="./theme.js?v=swatches2"></script>
   <script defer src="./sounds.js?v=30"></script>
   <script defer src="./settings-ui.js?v=10020"></script>
 </head>
@@ -38,16 +38,16 @@
   </div>
 </div>
 <div class="color-setting">
-  <label for="interface-color">Interface color</label>
-  <select id="interface-color">
-    <option value="red">Red</option>
-    <option value="orange">Orange</option>
-    <option value="yellow">Yellow</option>
-    <option value="green" selected>Green (default)</option>
-    <option value="blue">Blue</option>
-    <option value="indigo">Indigo</option>
-    <option value="violet">Violet</option>
-  </select>
+  <span id="color-label">Interface color</span>
+  <div class="color-swatches" role="group" aria-labelledby="color-label">
+    <button type="button" class="color-swatch" data-color-option="red" aria-label="Red" title="Red" aria-pressed="false"><span aria-hidden="true">✓</span></button>
+    <button type="button" class="color-swatch" data-color-option="orange" aria-label="Orange" title="Orange" aria-pressed="false"><span aria-hidden="true">✓</span></button>
+    <button type="button" class="color-swatch" data-color-option="yellow" aria-label="Yellow" title="Yellow" aria-pressed="false"><span aria-hidden="true">✓</span></button>
+    <button type="button" class="color-swatch" data-color-option="green" aria-label="Green (default)" title="Green (default)" aria-pressed="true"><span aria-hidden="true">✓</span></button>
+    <button type="button" class="color-swatch" data-color-option="blue" aria-label="Blue" title="Blue" aria-pressed="false"><span aria-hidden="true">✓</span></button>
+    <button type="button" class="color-swatch" data-color-option="indigo" aria-label="Indigo" title="Indigo" aria-pressed="false"><span aria-hidden="true">✓</span></button>
+    <button type="button" class="color-swatch" data-color-option="violet" aria-label="Violet" title="Violet" aria-pressed="false"><span aria-hidden="true">✓</span></button>
+  </div>
 </div>
 
     

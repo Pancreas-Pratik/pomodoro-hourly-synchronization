@@ -581,10 +581,16 @@ button.primary:hover:not(:disabled), :root[data-theme="light"] button.primary:ho
 #sync[aria-pressed="true"], #sync100[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
 .theme-switch button[aria-pressed="true"] { background:var(--accent); color:var(--accent-ink); }
 .theme-switch button:focus-visible { outline-color:var(--accent); }
-.color-setting { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.color-setting label { font-size:14px; }
-#interface-color { max-width:65%; min-height:36px; padding:6px 10px; border:1px solid var(--line); border-radius:7px; background:var(--surface); color:inherit; font:inherit; font-size:14px; }
-#interface-color:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.color-setting { display:flex; flex-direction:column; align-items:flex-start; gap:7px; }
+#color-label { font-size:14px; color:var(--muted); }
+.color-swatches { display:flex; flex-wrap:wrap; gap:4px; }
+.color-swatch { width:34px; height:34px; min-height:34px; padding:4px; border:2px solid transparent; border-radius:50%; background:transparent; display:grid; place-items:center; }
+.color-swatch span { display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--swatch-dark); color:transparent; font-size:15px; font-weight:800; }
+:root[data-theme="light"] .color-swatch span { background:var(--swatch-light); }
+.color-swatch[aria-pressed="true"] { border-color:var(--accent); }
+.color-swatch[aria-pressed="true"] span { color:#191a1c; }
+:root[data-theme="light"] .color-swatch[aria-pressed="true"] span { color:#fff; }
+.color-swatch:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 #settings-dialog .color-setting { grid-area:color; }
 #settings-dialog .settings-dialog-body {
   overflow-y:auto;
@@ -594,3 +600,11 @@ button.primary:hover:not(:disabled), :root[data-theme="light"] button.primary:ho
 @media(max-width:560px) {
   #settings-dialog .settings-dialog-body { grid-template-rows:auto; grid-template-areas:"profile" "durations" "note" "theme" "color" "sound" "message"; }
 }
+
+[data-color-option="red"] { --swatch-dark:#ffb4b4; --swatch-light:#bd3333; }
+[data-color-option="orange"] { --swatch-dark:#ffcb98; --swatch-light:#985000; }
+[data-color-option="yellow"] { --swatch-dark:#f3e697; --swatch-light:#756000; }
+[data-color-option="green"] { --swatch-dark:#d9e5c2; --swatch-light:#3c672c; }
+[data-color-option="blue"] { --swatch-dark:#afceff; --swatch-light:#285db2; }
+[data-color-option="indigo"] { --swatch-dark:#c5bdff; --swatch-light:#5142b5; }
+[data-color-option="violet"] { --swatch-dark:#e6b7fa; --swatch-light:#8537a4; }
